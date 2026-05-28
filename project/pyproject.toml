@@ -1,0 +1,20 @@
+[project]
+name = "project"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "SWTxSerega-tech",email = "happycraft2468@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "aiohttp (>=3.13.5,<4.0.0)",
+    "asyncio (>=4.0.0,<5.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "project", from = "src"}]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

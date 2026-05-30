@@ -1,5 +1,6 @@
 import sys
 import asyncio
+import json
 from datetime import datetime, timedelta
 
 import aiohttp
@@ -14,21 +15,20 @@ class PrivatBankAPI:
         try:
             async with session.get(url) as response:
                 if response.status != 200:
-                    print(f"Помилка HTTP: {response.status}")
+                    print(f"HTTP Error: {response.status}")
                     return None
 
                 return await response.json()
 
         except aiohttp.ClientError as e:
-            print(f"Помилка мережі: {e}")
+            print(f"Network error: {e}")
             return None
 
 
 class CurrencyService:
-    CURRENCIES = ["EUR", "USD"]
-
-    def __init__(self):
+    def __init__(self, currencies):
         self.api = PrivatBankAPI()
+        self.currencies = currencies
 
     async def get_rates(self, days: int):
         results = []
@@ -49,44 +49,47 @@ class CurrencyService:
                 if not data:
                     continue
 
-                day_result = {}
                 rates = {}
 
                 for rate in data.get("exchangeRate", []):
                     currency = rate.get("currency")
 
-                    if currency in self.CURRENCIES:
+                    if currency in self.currencies:
                         rates[currency] = {
                             "sale": rate.get("saleRate"),
                             "purchase": rate.get("purchaseRate")
                         }
 
-                day_result[data["date"]] = rates
-                results.append(day_result)
+                results.append({
+                    data["date"]: rates
+                })
 
         return results
 
 
 async def main():
-    if len(sys.argv) != 2:
-        print("Використання: py main.py <кількість_днів>")
+    if len(sys.argv) < 2:
+        print("Usage: python main.py <days> [currencies]")
         return
 
     try:
         days = int(sys.argv[1])
 
         if days < 1 or days > 10:
-            print("Можна отримати курс тільки за останні 10 днів")
+            print("You can request only up to 10 days")
             return
 
     except ValueError:
-        print("Аргумент має бути числом")
+        print("Days must be a number")
         return
 
-    service = CurrencyService()
+    currencies = sys.argv[2:] or ["EUR", "USD"]
+
+    service = CurrencyService(currencies)
+
     result = await service.get_rates(days)
 
-    print(result)
+    print(json.dumps(result, indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
